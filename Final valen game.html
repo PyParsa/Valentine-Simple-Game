@@ -1,0 +1,1413 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Neon Valentine Run — Stage 1–4 (Fixed)</title>
+  <style>
+    :root{
+      --bg0:#0b0b12; --ink:#e9e7ff; --muted:#bdb7ff;
+      --accent:#ff4d8d; --accent2:#6c63ff; --good:#38f2c1; --warn:#ffcc66;
+      --panel: rgba(255,255,255,.06);
+      --line: rgba(255,255,255,.14);
+      --shadow: rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh; display:grid; place-items:center;
+      background: radial-gradient(1000px 600px at 20% 15%, #1d1a3a 0%, var(--bg0) 55%),
+                  radial-gradient(900px 600px at 75% 30%, #2a1530 0%, var(--bg0) 55%),
+                  linear-gradient(180deg, var(--bg0), #07070c);
+      color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      overflow:hidden;
+    }
+    .wrap{ width:min(980px, 94vw); }
+    .hud{ display:flex; gap:12px; flex-wrap:wrap; align-items:stretch; justify-content:space-between; margin-bottom:12px; }
+    .card{
+      flex: 1 1 320px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px 14px;
+      box-shadow: 0 14px 40px var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .title{font-weight:900; letter-spacing:.4px; margin:0 0 6px; font-size:16px}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .pill{
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      padding:8px 10px; border-radius:999px;
+      display:inline-flex; gap:8px; align-items:center;
+      font-size:13px; color:var(--muted);
+      user-select:none;
+    }
+    .pill b{color:var(--ink)}
+    .btn{
+      cursor:pointer; border:none; border-radius:12px; padding:10px 12px;
+      font-weight:850; letter-spacing:.2px;
+      color:#0b0b12;
+      background: linear-gradient(135deg, var(--accent), #ff7aa7);
+      box-shadow: 0 12px 26px rgba(255,77,141,.25);
+    }
+    .btn.alt{
+      background: linear-gradient(135deg, var(--accent2), #8b86ff);
+      box-shadow: 0 12px 26px rgba(108,99,255,.22);
+      color:#07070c;
+    }
+    .btn.dark{
+      background: rgba(0,0,0,.35);
+      color: var(--ink);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow:none;
+    }
+    .btn:active{transform: translateY(1px)}
+    canvas{
+      width:100%; height:560px; display:block;
+      border-radius: 22px;
+      border:1px solid rgba(255,255,255,.16);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+      box-shadow: 0 18px 55px var(--shadow);
+    }
+    .hint{margin-top:6px; font-size:12px; opacity:.85; color:var(--muted)}
+    .footer{margin-top:10px; text-align:center; opacity:.75; font-size:12px; color:var(--muted)}
+
+    .dlg{
+      position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+      width:min(860px, 92vw);
+      background: rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.16);
+      border-radius: 18px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
+      backdrop-filter: blur(12px);
+      padding: 14px 14px 12px;
+      display:none;
+    }
+    .dlg .top{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-bottom:8px;
+    }
+    .tag{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      font-size:12px; color:var(--muted);
+      user-select:none;
+    }
+    .tag .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: var(--good);
+      box-shadow: 0 0 14px rgba(56,242,193,.45);
+    }
+    .dlg .text{
+      margin:0;
+      line-height:1.75;
+      font-size:14px;
+      color: var(--ink);
+      white-space:pre-wrap;
+    }
+    .dlg .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
+    .kbd{
+      font-size:11px; opacity:.7; color:var(--muted);
+      border:1px solid rgba(255,255,255,.16);
+      padding:4px 8px; border-radius:10px; background: rgba(0,0,0,.18);
+    }
+
+    .overlay{
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(0,0,0,.62);
+      backdrop-filter: blur(10px);
+      padding: 18px;
+    }
+    .panel{
+      width:min(760px, 96vw);
+      background: rgba(0,0,0,.42);
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 22px;
+      box-shadow: 0 22px 70px rgba(0,0,0,.55);
+      padding: 16px;
+    }
+    .panel h2{ margin: 0 0 6px; font-size: 16px; letter-spacing: .3px; }
+    .panel p{ margin: 0 0 14px; color: var(--muted); line-height: 1.6; font-size: 13px; }
+    .choices{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+    .choice{
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,.06);
+      cursor:pointer;
+      transition: transform .08s ease;
+      user-select:none;
+    }
+    .choice:active{ transform: translateY(1px); }
+    .choice .name{ font-weight: 900; margin: 0 0 6px; }
+    .choice .desc{ margin:0; color: var(--muted); font-size: 13px; line-height:1.55; }
+    .choice .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      margin-top:10px;
+      font-size: 12px;
+      color: var(--ink);
+      opacity: .92;
+    }
+    .spark{ width:10px; height:10px; border-radius:999px; box-shadow: 0 0 18px rgba(255,255,255,.35); }
+    input[type="range"]{ accent-color: #ff7aa7; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hud">
+      <div class="card">
+        <div class="title">NEON VALENTINE RUN — STAGE 1–4 (FIXED)</div>
+        <div class="row">
+          <div class="pill">💠 <span>Hearts:</span> <b id="score">0</b></div>
+          <div class="pill">🕯️ <span>Lives:</span> <b id="lives">3</b></div>
+          <div class="pill">⏱️ <span>Time:</span> <b id="time">0.0</b>s</div>
+          <div class="pill">🏁 <span>Stage:</span> <b id="stage">1</b>/<b id="stageMax">4</b></div>
+          <div class="pill">🧸 <span>Hero:</span> <b id="heroName">—</b></div>
+          <div class="pill">🍄 <span>Mushrooms:</span> <b id="mcount">0</b></div>
+        </div>
+        <div class="hint">Move: A/D or ←/→ · Jump: W/Space/↑ · Reset: R · Dialogue: Enter</div>
+      </div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <button class="btn" id="play">Play</button>
+          <button class="btn alt" id="vibe">Vibe: Sleek</button>
+          <button class="btn dark" id="reselect">Change Hero</button>
+        </div>
+        <div class="row" style="justify-content:space-between; margin-top:10px;">
+          <button class="btn dark" id="lofi">Lo-fi: Off</button>
+          <div class="pill" style="gap:10px;">
+            🔊 <span>Vol</span>
+            <input id="vol" type="range" min="0" max="1" step="0.01" value="0.35" />
+          </div>
+        </div>
+        <div class="hint">Stage 3 rescue path fixed. Heart/spike safety improved. Lo-fi upgraded.</div>
+      </div>
+    </div>
+
+    <canvas id="c"></canvas>
+    <div class="footer">Gogol & Bobol. Narrated by aibool.</div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="panel">
+      <h2>Pick your hero.</h2>
+      <p>Dialogue plays once per hero selection. Mushrooms add lives.</p>
+      <div class="choices">
+        <div class="choice" id="pickGirl">
+          <div class="name">Gogol (Girl)</div>
+          <p class="desc">Pastel-cute, quietly fearless. She jumps like she’s dancing on neon.</p>
+          <div class="badge"><span class="spark" style="background:#ff7ab8"></span><span>Bow + soft glow</span></div>
+        </div>
+        <div class="choice" id="pickBoy">
+          <div class="name">Bobol (Boy)</div>
+          <p class="desc">Pocket-sized troublemaker. He lands like a beat drop—clean and loud.</p>
+          <div class="badge"><span class="spark" style="background:#6c63ff"></span><span>Sunnies + sharp glow</span></div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:12px;">
+        <button class="btn dark" id="overlayClose">Not now</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dlg" id="dlg">
+    <div class="top">
+      <div class="tag"><span class="dot"></span><span id="speaker">aibool</span></div>
+      <div class="row">
+        <span class="kbd">Enter</span>
+        <span class="kbd">Esc</span>
+      </div>
+    </div>
+    <p class="text" id="dlgText"></p>
+    <div class="actions">
+      <button class="btn alt" id="next">Continue</button>
+    </div>
+  </div>
+
+<script>
+/* =========================
+   SETTINGS
+   ========================= */
+const PARTNER = "you";
+const TOTAL_STAGES = 4;
+const SPEAKER = "aibool";
+const MAX_LIVES = 9;
+
+const END_NOTE =
+`Run complete.
+you're the best for me babe, you know
+
+Happy Valentine’s Day, ${PARTNER}.
+i luv u very very very wait for it.`;
+
+/* =========================
+   Canvas / scale
+   ========================= */
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+let W=0,H=0,DPR=1;
+function resize(){
+  DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  const r = canvas.getBoundingClientRect();
+  W = Math.floor(r.width * DPR);
+  H = Math.floor(r.height * DPR);
+  canvas.width = W; canvas.height = H;
+}
+window.addEventListener("resize", ()=>{ resize(); makeStage(stage); });
+resize();
+
+/* =========================
+   UI
+   ========================= */
+const ui = {
+  score: document.getElementById("score"),
+  lives: document.getElementById("lives"),
+  time: document.getElementById("time"),
+  stage: document.getElementById("stage"),
+  stageMax: document.getElementById("stageMax"),
+  heroName: document.getElementById("heroName"),
+  mcount: document.getElementById("mcount"),
+  play: document.getElementById("play"),
+  vibe: document.getElementById("vibe"),
+  reselect: document.getElementById("reselect"),
+  lofi: document.getElementById("lofi"),
+  vol: document.getElementById("vol"),
+  dlg: document.getElementById("dlg"),
+  dlgText: document.getElementById("dlgText"),
+  next: document.getElementById("next"),
+  speaker: document.getElementById("speaker"),
+  overlay: document.getElementById("overlay"),
+  pickGirl: document.getElementById("pickGirl"),
+  pickBoy: document.getElementById("pickBoy"),
+  overlayClose: document.getElementById("overlayClose"),
+};
+ui.stageMax.textContent = String(TOTAL_STAGES);
+ui.speaker.textContent = SPEAKER;
+
+/* =========================
+   Input
+   ========================= */
+const keys = new Set();
+window.addEventListener("keydown", (e)=>{
+  if(["ArrowLeft","ArrowRight","ArrowUp"," ","a","d","w","A","D","W","r","R","Enter","Escape"].includes(e.key)) e.preventDefault();
+  keys.add(e.key);
+  if(e.key === "Enter") advanceDialogue();
+  if(e.key === "Escape") hideDialogue();
+  if(e.key === "r" || e.key === "R") resetRun();
+});
+window.addEventListener("keyup", (e)=> keys.delete(e.key));
+
+/* =========================
+   Hero
+   ========================= */
+const HEROES = {
+  girl: { id:"girl", name:"Gogol", bodyFill:"rgba(255,255,255,.14)", glow:"rgba(255,122,184,.55)", accent:"#ff7ab8", detail:"#ffe3f2" },
+  boy:  { id:"boy",  name:"Bobol", bodyFill:"rgba(255,255,255,.14)", glow:"rgba(108,99,255,.55)", accent:"#6c63ff", detail:"#d9d6ff" },
+};
+let selectedHero = null;
+const dialogueGate = { introShownForHeroId: null };
+const hero = { x:120, y:120, vx:0, vy:0, w:30, h:38, onGround:false, face:1, bob:0, invuln:0 };
+
+function applyHero(id){
+  selectedHero = HEROES[id] || HEROES.girl;
+  ui.heroName.textContent = selectedHero.name;
+  ui.overlay.style.display = "none";
+
+  if(dialogueGate.introShownForHeroId !== selectedHero.id){
+    dialogueGate.introShownForHeroId = selectedHero.id;
+    showDialogue([{who:SPEAKER, text:
+`Hello, ${PARTNER}.
+I’m aibool — I hope this simple game can help you get away from the real world a little.
+
+Hero: ${selectedHero.name}.
+Stages: ${TOTAL_STAGES}.
+Collect hearts. Grab mushrooms for extra lives.
+And please… don’t negotiate with gravity.`}]);
+  }
+}
+
+/* =========================
+   World + physics
+   ========================= */
+let t0 = 0;
+let running = false;
+let elapsed = 0;
+
+let score = 0;
+let lives = 3;
+let stage = 1;
+let mushroomCount = 0;
+
+let vibeMode = 0;
+
+// ✅ tuned for “always reachable” jumps (fixes Stage 3 trap)
+const gravity = 1450;
+const moveSpeed = 360;
+const jumpVel  = 650; // was lower; now safely reaches 120–150px ledges
+const friction = 0.86;
+
+let platforms = [];
+let spikes = [];
+let hearts = [];
+let mushrooms = [];
+let portal = {x: 0, y: 0, r: 22};
+let movers = [];
+let enemies = [];
+
+function rect(x,y,w,h){ return {x,y,w,h, vx:0, moving:false, minX:x, maxX:x}; }
+function mover(x,y,w,h, minX, maxX, speed){
+  return {x,y,w,h, moving:true, vx:speed*DPR, minX:minX*DPR, maxX:maxX*DPR};
+}
+function orb(x,y){ return {x,y,r: 12*DPR, got:false, phase: Math.random()*10}; }
+function mush(x,y){ return {x,y,r: 12*DPR, got:false, phase: Math.random()*10}; }
+function spike(x,y,w,h){ return {x,y,w,h}; }
+function enemySine(x0,y0,rangePx,omega,phase){
+  return { x0, y0, x:x0, y:y0, r: 14*DPR, range: rangePx*DPR, omega, phase, yHover:0 };
+}
+
+function syncUI(){
+  ui.score.textContent = String(score);
+  ui.lives.textContent = String(lives);
+  ui.stage.textContent = String(stage);
+  ui.stageMax.textContent = String(TOTAL_STAGES);
+  ui.mcount.textContent = String(mushroomCount);
+}
+
+/* ======== Item safety (stronger) ======== */
+const SAFE_R = 34; // was 22. bigger safety bubble
+function tooCloseToSpike(ix, iy){
+  for(const s of spikes){
+    const sb = {x:s.x + s.w*0.10, y:(s.y - s.h), w:s.w*0.80, h:s.h};
+    const cx = Math.max(sb.x, Math.min(ix, sb.x+sb.w));
+    const cy = Math.max(sb.y, Math.min(iy, sb.y+sb.h));
+    const dx = ix - cx, dy = iy - cy;
+    if(dx*dx + dy*dy < (SAFE_R*DPR)*(SAFE_R*DPR)) return true;
+  }
+  return false;
+}
+function nudgeItemAway(item){
+  for(let k=0;k<55;k++){
+    if(!tooCloseToSpike(item.x, item.y)) return;
+    item.y -= 9*DPR;
+    item.x += (k%2===0 ? 10*DPR : -10*DPR);
+  }
+}
+
+/* =========================
+   Stages 1..4 only
+   ========================= */
+function makeStage(n){
+  const baseY = H - 90*DPR;
+
+  movers = [];
+  enemies = [];
+  platforms = [ rect(0, baseY, W, 60*DPR) ];
+  spikes = [];
+  hearts = [];
+  mushrooms = [];
+
+  const portalLift = 80*DPR;
+
+  if(n === 1){
+    platforms.push(rect(90*DPR, baseY-120*DPR, 180*DPR, 18*DPR));
+    platforms.push(rect(320*DPR, baseY-210*DPR, 190*DPR, 18*DPR));
+    platforms.push(rect(600*DPR, baseY-140*DPR, 220*DPR, 18*DPR));
+    platforms.push(rect(830*DPR, baseY-240*DPR, 140*DPR, 18*DPR));
+
+    spikes.push(spike(270*DPR, baseY-10*DPR, 54*DPR, 34*DPR));
+    spikes.push(spike(560*DPR, baseY-10*DPR, 54*DPR, 34*DPR));
+
+    hearts.push(orb(150*DPR, baseY-150*DPR));
+    hearts.push(orb(390*DPR, baseY-240*DPR));
+    hearts.push(orb(690*DPR, baseY-170*DPR));
+    hearts.push(orb(880*DPR, baseY-270*DPR));
+
+    mushrooms.push(mush(610*DPR, baseY-190*DPR));
+
+    portal = { x: (W-70*DPR), y: baseY-260*DPR - portalLift, r: 24*DPR };
+  }
+
+  if(n === 2){
+    platforms.push(rect(70*DPR, baseY-120*DPR, 160*DPR, 18*DPR));
+    platforms.push(rect(280*DPR, baseY-210*DPR, 150*DPR, 18*DPR));
+    platforms.push(rect(470*DPR, baseY-300*DPR, 150*DPR, 18*DPR));
+    platforms.push(rect(670*DPR, baseY-210*DPR, 140*DPR, 18*DPR));
+    platforms.push(rect(840*DPR, baseY-260*DPR, 130*DPR, 18*DPR));
+
+    movers.push(mover(470, 0, 120, 16, 470, 680, 160));
+    movers[0].x = 520*DPR; movers[0].y = baseY-150*DPR;
+    movers[0].w = 120*DPR; movers[0].h = 16*DPR;
+    platforms.push(movers[0]);
+
+    spikes.push(spike(240*DPR, baseY-10*DPR, 60*DPR, 36*DPR));
+    spikes.push(spike(430*DPR, baseY-10*DPR, 60*DPR, 36*DPR));
+    spikes.push(spike(760*DPR, baseY-10*DPR, 60*DPR, 36*DPR));
+    spikes.push(spike(560*DPR, baseY-304*DPR, 60*DPR, 36*DPR));
+
+    enemies.push(enemySine(360*DPR, baseY-240*DPR, 120, 1.25, Math.random()*10));
+
+    hearts.push(orb(120*DPR, baseY-150*DPR));
+    hearts.push(orb(330*DPR, baseY-240*DPR));
+    hearts.push(orb(520*DPR, baseY-330*DPR));
+    hearts.push(orb(720*DPR, baseY-240*DPR));
+    hearts.push(orb(900*DPR, baseY-290*DPR));
+
+    mushrooms.push(mush(820*DPR, baseY-290*DPR));
+
+    portal = { x: (W-70*DPR), y: baseY-290*DPR - portalLift, r: 24*DPR };
+  }
+
+  if(n === 3){
+    // ✅ FIX: add rescue ledge near ground + lower first climb platform
+    platforms.push(rect(55*DPR,  baseY-80*DPR,  190*DPR, 18*DPR)); // safety ledge
+    platforms.push(rect(70*DPR,  baseY-120*DPR, 160*DPR, 18*DPR)); // was too high before
+    platforms.push(rect(260*DPR, baseY-220*DPR, 140*DPR, 18*DPR));
+    platforms.push(rect(430*DPR, baseY-290*DPR, 130*DPR, 18*DPR));
+    platforms.push(rect(590*DPR, baseY-235*DPR, 130*DPR, 18*DPR));
+    platforms.push(rect(760*DPR, baseY-185*DPR, 160*DPR, 18*DPR));
+    platforms.push(rect(920*DPR, baseY-275*DPR, 130*DPR, 18*DPR));
+
+    movers.push(mover(240,0,110,16,240,520,190));
+    movers[0].x = 360*DPR; movers[0].y = baseY-160*DPR; movers[0].w=110*DPR; movers[0].h=16*DPR;
+    movers.push(mover(600,0,110,16,600,830,210));
+    movers[1].x = 700*DPR; movers[1].y = baseY-320*DPR; movers[1].w=110*DPR; movers[1].h=16*DPR;
+    platforms.push(movers[0], movers[1]);
+
+    spikes.push(spike(220*DPR, baseY-10*DPR, 68*DPR, 38*DPR));
+    spikes.push(spike(520*DPR, baseY-10*DPR, 68*DPR, 38*DPR));
+    spikes.push(spike(690*DPR, baseY-10*DPR, 68*DPR, 38*DPR));
+    spikes.push(spike(860*DPR, baseY-10*DPR, 68*DPR, 38*DPR));
+    // ✅ FIX: removed the mid-air spike that was “under” a heart (the 99% death one)
+
+    enemies.push(enemySine(310*DPR, baseY-250*DPR, 150, 1.35, Math.random()*10));
+    enemies.push(enemySine(790*DPR, baseY-205*DPR, 170, 1.45, Math.random()*10));
+
+    hearts.push(orb(125*DPR, baseY-145*DPR));
+    hearts.push(orb(300*DPR, baseY-260*DPR)); // “heart 2” now far from any spike
+    hearts.push(orb(470*DPR, baseY-320*DPR));
+    hearts.push(orb(650*DPR, baseY-265*DPR));
+    hearts.push(orb(780*DPR, baseY-215*DPR));
+    hearts.push(orb(950*DPR, baseY-300*DPR));
+
+    mushrooms.push(mush(610*DPR, baseY-255*DPR));
+
+    portal = { x: (W-70*DPR), y: baseY-320*DPR - portalLift, r: 24*DPR };
+  }
+
+  if(n === 4){
+    platforms.push(rect(70*DPR, baseY-140*DPR, 140*DPR, 18*DPR));
+    platforms.push(rect(240*DPR, baseY-230*DPR, 120*DPR, 18*DPR));
+    platforms.push(rect(390*DPR, baseY-320*DPR, 120*DPR, 18*DPR));
+    platforms.push(rect(560*DPR, baseY-260*DPR, 130*DPR, 18*DPR));
+    platforms.push(rect(730*DPR, baseY-200*DPR, 140*DPR, 18*DPR));
+    platforms.push(rect(900*DPR, baseY-260*DPR, 130*DPR, 18*DPR));
+
+    movers.push(mover(330,0,120,16,330,630,230));
+    movers[0].x = 480*DPR; movers[0].y = baseY-160*DPR; movers[0].w=120*DPR; movers[0].h=16*DPR;
+    movers.push(mover(700,0,110,16,700,930,260));
+    movers[1].x = 820*DPR; movers[1].y = baseY-340*DPR; movers[1].w=110*DPR; movers[1].h=16*DPR;
+    platforms.push(movers[0], movers[1]);
+
+    spikes.push(spike(210*DPR, baseY-10*DPR, 72*DPR, 40*DPR));
+    spikes.push(spike(310*DPR, baseY-10*DPR, 72*DPR, 40*DPR));
+    spikes.push(spike(510*DPR, baseY-10*DPR, 72*DPR, 40*DPR));
+    spikes.push(spike(650*DPR, baseY-10*DPR, 72*DPR, 40*DPR));
+    spikes.push(spike(780*DPR, baseY-10*DPR, 72*DPR, 40*DPR));
+    spikes.push(spike(920*DPR, baseY-10*DPR, 72*DPR, 40*DPR));
+
+    enemies.push(enemySine(280*DPR, baseY-250*DPR, 190, 1.55, Math.random()*10));
+    enemies.push(enemySine(610*DPR, baseY-280*DPR, 200, 1.65, Math.random()*10));
+    enemies.push(enemySine(860*DPR, baseY-220*DPR, 210, 1.75, Math.random()*10));
+
+    hearts.push(orb(120*DPR, baseY-170*DPR));
+    hearts.push(orb(260*DPR, baseY-260*DPR));
+    hearts.push(orb(420*DPR, baseY-350*DPR));
+    hearts.push(orb(600*DPR, baseY-290*DPR));
+    hearts.push(orb(760*DPR, baseY-230*DPR));
+    hearts.push(orb(930*DPR, baseY-290*DPR));
+    hearts.push(orb(820*DPR, baseY-360*DPR));
+
+    mushrooms.push(mush(560*DPR, baseY-300*DPR));
+    mushrooms.push(mush(910*DPR, baseY-300*DPR));
+
+    portal = { x: (W-70*DPR), y: baseY-360*DPR - portalLift, r: 24*DPR };
+  }
+
+  // safety pass: move collectibles away from spikes
+  for(const h of hearts) nudgeItemAway(h);
+  for(const m of mushrooms) nudgeItemAway(m);
+
+  // spawn hero
+  hero.x = 110*DPR; hero.y = baseY-160*DPR;
+  hero.vx = 0; hero.vy = 0; hero.onGround = false;
+
+  syncUI();
+}
+
+/* =========================
+   Dialogue
+   ========================= */
+let dlgQueue = [];
+let dlgOpen = false;
+
+function showDialogue(lines){
+  dlgQueue = lines.slice();
+  dlgOpen = true;
+  ui.dlg.style.display = "block";
+  renderDialogueLine();
+}
+function renderDialogueLine(){
+  if(dlgQueue.length === 0){ hideDialogue(); return; }
+  const line = dlgQueue[0];
+  ui.speaker.textContent = line.who;
+  typeText(ui.dlgText, line.text, 18);
+}
+let typingTimer = null;
+function typeText(el, text, cps=22){
+  if(typingTimer) clearInterval(typingTimer);
+  el.textContent = "";
+  let i = 0;
+  const stepMs = 1000 / cps;
+  typingTimer = setInterval(()=>{
+    i++;
+    el.textContent = text.slice(0,i);
+    if(i >= text.length){ clearInterval(typingTimer); typingTimer = null; }
+  }, stepMs);
+}
+function advanceDialogue(){
+  if(!dlgOpen) return;
+  if(typingTimer){
+    clearInterval(typingTimer);
+    typingTimer = null;
+    ui.dlgText.textContent = dlgQueue[0].text;
+    return;
+  }
+  dlgQueue.shift();
+  renderDialogueLine();
+}
+function hideDialogue(){
+  dlgOpen = false;
+  ui.dlg.style.display = "none";
+  dlgQueue = [];
+  if(typingTimer){ clearInterval(typingTimer); typingTimer = null; }
+}
+ui.next.addEventListener("click", advanceDialogue);
+
+/* =========================
+   Lo-fi (Upgraded)
+   ========================= */
+let audio = { ctx:null, master:null, on:false, timer:null, bpm:78, step:0, seed:0 };
+
+function ensureAudio(){
+  if(audio.ctx) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ctxA = new AC();
+
+  const master = ctxA.createGain();
+  master.gain.value = parseFloat(ui.vol.value);
+  master.connect(ctxA.destination);
+
+  audio.ctx = ctxA;
+  audio.master = master;
+}
+ui.vol.addEventListener("input", ()=>{
+  if(audio.master) audio.master.gain.value = parseFloat(ui.vol.value);
+});
+
+function makeImpulse(ctxA, seconds=1.4, decay=2.4){
+  const len = Math.floor(ctxA.sampleRate * seconds);
+  const buf = ctxA.createBuffer(2, len, ctxA.sampleRate);
+  for(let ch=0; ch<2; ch++){
+    const data = buf.getChannelData(ch);
+    for(let i=0;i<len;i++){
+      const t = i/len;
+      data[i] = (Math.random()*2-1) * Math.pow(1-t, decay) * 0.45;
+    }
+  }
+  return buf;
+}
+
+function startLofi(){
+  ensureAudio();
+  if(audio.on) return;
+  audio.on = true;
+  ui.lofi.textContent = "Lo-fi: On";
+
+  const ctxA = audio.ctx;
+  const master = audio.master;
+
+  // bus chain: comp -> tape-ish LP -> delay -> reverb -> master
+  const comp = ctxA.createDynamicsCompressor();
+  comp.threshold.value = -18;
+  comp.ratio.value = 3.2;
+  comp.attack.value = 0.006;
+  comp.release.value = 0.18;
+
+  const lp = ctxA.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 5200;
+  lp.Q.value = 0.7;
+
+  const delay = ctxA.createDelay(1.0);
+  delay.delayTime.value = 0.24;
+  const fb = ctxA.createGain();
+  fb.gain.value = 0.22;
+  delay.connect(fb); fb.connect(delay);
+
+  const rev = ctxA.createConvolver();
+  rev.buffer = makeImpulse(ctxA, 1.2, 2.6);
+  const revGain = ctxA.createGain();
+  revGain.gain.value = 0.22;
+
+  const dry = ctxA.createGain(); dry.gain.value = 0.92;
+  const wet = ctxA.createGain(); wet.gain.value = 0.30;
+
+  // connect graph
+  comp.connect(lp);
+  lp.connect(dry); dry.connect(master);
+
+  lp.connect(delay); delay.connect(wet);
+  delay.connect(rev); rev.connect(revGain); revGain.connect(wet);
+  wet.connect(master);
+
+  // instrument gains -> comp
+  const padGain = ctxA.createGain(); padGain.gain.value = 0.22; padGain.connect(comp);
+  const bassGain = ctxA.createGain(); bassGain.gain.value = 0.20; bassGain.connect(comp);
+  const leadGain = ctxA.createGain(); leadGain.gain.value = 0.10; leadGain.connect(comp);
+  const drumGain = ctxA.createGain(); drumGain.gain.value = 0.16; drumGain.connect(comp);
+  const crackleGain = ctxA.createGain(); crackleGain.gain.value = 0.05; crackleGain.connect(comp);
+
+  function noiseBuffer(dur){
+    const n = Math.floor(ctxA.sampleRate * dur);
+    const b = ctxA.createBuffer(1, n, ctxA.sampleRate);
+    const d = b.getChannelData(0);
+    for(let i=0;i<n;i++) d[i] = (Math.random()*2-1);
+    const s = ctxA.createBufferSource(); s.buffer = b; return s;
+  }
+
+  // scales/chords
+  const chords = [
+    [261.63, 329.63, 392.00], // C
+    [293.66, 369.99, 440.00], // Dm
+    [220.00, 277.18, 329.63], // Am
+    [246.94, 311.13, 392.00], // Fmaj-ish
+  ];
+  const scale = [0,2,3,5,7,10]; // minor pentatonic-ish offsets
+  function noteFreq(root, semis){ return root * Math.pow(2, semis/12); }
+
+  function playPad(now, chord){
+    chord.forEach((f,i)=>{
+      const o = ctxA.createOscillator();
+      o.type = "triangle";
+      const g = ctxA.createGain();
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+      o.frequency.setValueAtTime(f*(i===0?0.5:1.0), now);
+      o.connect(g); g.connect(padGain);
+      o.start(now); o.stop(now + 1.9);
+    });
+  }
+
+  function playBass(now, rootHz){
+    const o = ctxA.createOscillator();
+    o.type = "sine";
+    const g = ctxA.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.20, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+    o.frequency.setValueAtTime(rootHz, now);
+    o.connect(g); g.connect(bassGain);
+    o.start(now); o.stop(now + 0.3);
+  }
+
+  function playLead(now, rootHz, step){
+    // sparse melodic blips
+    if(step % 4 !== 2) return;
+    const o = ctxA.createOscillator();
+    o.type = "sine";
+    const g = ctxA.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.10, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    const semis = scale[(audio.seed + step) % scale.length] + (step%8===2 ? 12 : 0);
+    o.frequency.setValueAtTime(noteFreq(rootHz, semis), now);
+    o.connect(g); g.connect(leadGain);
+    o.start(now); o.stop(now + 0.25);
+  }
+
+  function playKick(now){
+    const o = ctxA.createOscillator();
+    o.type = "sine";
+    const g = ctxA.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.32, now + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+    o.frequency.setValueAtTime(150, now);
+    o.frequency.exponentialRampToValueAtTime(62, now + 0.11);
+    o.connect(g); g.connect(drumGain);
+    o.start(now); o.stop(now + 0.18);
+  }
+
+  function playHat(now){
+    const src = noiseBuffer(0.05);
+    const hp = ctxA.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 5000;
+    const g = ctxA.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.11, now + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+    src.connect(hp); hp.connect(g); g.connect(drumGain);
+    src.start(now); src.stop(now + 0.06);
+  }
+
+  function playSnare(now){
+    const src = noiseBuffer(0.12);
+    const bp = ctxA.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1800; bp.Q.value = 0.8;
+    const g = ctxA.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.18, now + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+    src.connect(bp); bp.connect(g); g.connect(drumGain);
+    src.start(now); src.stop(now + 0.13);
+  }
+
+  function crackle(now){
+    if(Math.random() > 0.25) return;
+    const src = noiseBuffer(0.02);
+    const hp = ctxA.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=6500;
+    const g = ctxA.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.08, now + 0.001);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.02);
+    src.connect(hp); hp.connect(g); g.connect(crackleGain);
+    src.start(now); src.stop(now + 0.021);
+  }
+
+  const beat = 60 / audio.bpm;
+  const stepDur = beat / 2; // 8th notes
+  audio.step = 0;
+  audio.seed = (Math.random()*999)|0;
+
+  audio.timer = setInterval(()=>{
+    if(!audio.on) return;
+    const now = ctxA.currentTime + 0.02;
+    const step = audio.step;
+
+    const bar = Math.floor(step / 16);
+    const chord = chords[bar % chords.length];
+    const root = chord[0] * 0.5;
+
+    // chord on bar start
+    if(step % 16 === 0) playPad(now, chord);
+
+    // drum pattern
+    if(step % 8 === 0) playKick(now);
+    if(step % 8 === 4) playSnare(now);
+    if(step % 2 === 0) playHat(now);
+
+    // bass: off-beat groove
+    if(step % 4 === 2) playBass(now, root * (step%16===10 ? 1.12 : 1.0));
+
+    // lead: sparse
+    playLead(now, chord[0], step);
+
+    // crackle
+    crackle(now);
+
+    audio.step++;
+  }, stepDur * 1000);
+}
+
+function stopLofi(){
+  if(!audio.on) return;
+  audio.on = false;
+  ui.lofi.textContent = "Lo-fi: Off";
+  if(audio.timer){ clearInterval(audio.timer); audio.timer = null; }
+}
+
+ui.lofi.addEventListener("click", ()=> audio.on ? stopLofi() : startLofi() );
+
+/* =========================
+   Loop
+   ========================= */
+function start(){
+  if(!running){
+    running = true;
+    t0 = performance.now();
+    requestAnimationFrame(loop);
+  }
+}
+function stop(){ running = false; }
+
+ui.play.addEventListener("click", ()=>{
+  if(!selectedHero){ ui.overlay.style.display = "flex"; return; }
+  ensureAudio();
+  if(!running){
+    start();
+    if(elapsed === 0) resetRun();
+    ui.play.textContent = "Pause";
+  } else {
+    stop();
+    ui.play.textContent = "Play";
+  }
+});
+ui.vibe.addEventListener("click", ()=>{
+  vibeMode = (vibeMode+1)%2;
+  ui.vibe.textContent = vibeMode ? "Vibe: Neon-Noir" : "Vibe: Sleek";
+});
+ui.reselect.addEventListener("click", ()=>{ ui.overlay.style.display = "flex"; });
+
+function loop(ts){
+  if(!running) return;
+  const dt = Math.min(0.033, (ts - t0) / 1000);
+  t0 = ts;
+
+  if(!dlgOpen) elapsed += dt;
+  ui.time.textContent = elapsed.toFixed(1);
+
+  update(dt, ts);
+  draw(ts);
+
+  requestAnimationFrame(loop);
+}
+
+/* =========================
+   Gameplay
+   ========================= */
+function update(dt, ts){
+  for(const m of movers){
+    m.x += m.vx * dt;
+    if(m.x < m.minX || m.x + m.w > m.maxX){
+      m.vx *= -1;
+      m.x = Math.max(m.minX, Math.min(m.x, m.maxX - m.w));
+    }
+  }
+
+  const t = ts / 1000;
+  for(const e of enemies){
+    e.x = e.x0 + Math.sin(t*e.omega + e.phase) * e.range;
+    e.yHover = Math.sin(t*2.2 + e.phase) * 6*DPR;
+  }
+
+  const left  = keys.has("ArrowLeft") || keys.has("a") || keys.has("A");
+  const right = keys.has("ArrowRight")|| keys.has("d") || keys.has("D");
+  const jump  = keys.has("ArrowUp")   || keys.has("w") || keys.has("W") || keys.has(" ");
+
+  if(!dlgOpen){
+    if(left){ hero.vx = -moveSpeed*DPR; hero.face = -1; }
+    else if(right){ hero.vx = moveSpeed*DPR; hero.face = 1; }
+    else { hero.vx *= friction; if(Math.abs(hero.vx) < 6*DPR) hero.vx = 0; }
+
+    if(jump && hero.onGround){
+      hero.vy = -jumpVel*DPR;
+      hero.onGround = false;
+    }
+  } else {
+    hero.vx *= 0.85; if(Math.abs(hero.vx)<4*DPR) hero.vx=0;
+  }
+
+  hero.vy += gravity*DPR*dt;
+  hero.x += hero.vx*dt;
+  hero.y += hero.vy*dt;
+
+  hero.x = Math.max(10*DPR, Math.min(W-10*DPR, hero.x));
+  hero.onGround = false;
+
+  for(const p of platforms){
+    const hb = heroBox();
+    if(aabb(hb, p)){
+      const overlapX = Math.min(hb.x+hb.w - p.x, p.x+p.w - hb.x);
+      const overlapY = Math.min(hb.y+hb.h - p.y, p.y+p.h - hb.y);
+
+      if(overlapY < overlapX){
+        if(hb.y < p.y){
+          hero.y -= overlapY;
+          hero.vy = 0;
+          hero.onGround = true;
+          if(p.moving) hero.x += (p.vx * dt);
+        } else {
+          hero.y += overlapY;
+          hero.vy = 40*DPR;
+        }
+      } else {
+        if(hb.x < p.x) hero.x -= overlapX;
+        else hero.x += overlapX;
+        hero.vx *= 0.2;
+      }
+    }
+  }
+
+  if(hero.y > H + 80*DPR){
+    loseLife();
+    respawn();
+  }
+
+  if(hero.invuln > 0) hero.invuln -= dt;
+
+  if(hero.invuln <= 0){
+    const hb2 = heroBox();
+    for(const s of spikes){
+      const sb = {x:s.x + s.w*0.18, y:(s.y - s.h), w:s.w*0.64, h:s.h};
+      if(aabb(hb2, sb)){ loseLife(); break; }
+    }
+  }
+
+  if(hero.invuln <= 0){
+    for(const e of enemies){
+      const dx = hero.x - e.x;
+      const dy = hero.y - (e.y0 + (e.yHover||0));
+      const rr = e.r + 18*DPR;
+      if(dx*dx + dy*dy < rr*rr){ loseLife(); break; }
+    }
+  }
+
+  for(const h of hearts){
+    if(h.got) continue;
+    const dx = hero.x - h.x, dy = hero.y - h.y;
+    if(dx*dx + dy*dy < (26*DPR)*(26*DPR)){
+      h.got = true;
+      score += 1;
+      syncUI();
+    }
+  }
+
+  for(const m of mushrooms){
+    if(m.got) continue;
+    const dx = hero.x - m.x, dy = hero.y - m.y;
+    if(dx*dx + dy*dy < (26*DPR)*(26*DPR)){
+      m.got = true;
+      mushroomCount += 1;
+      lives = Math.min(MAX_LIVES, lives + 1);
+      syncUI();
+    }
+  }
+
+  const dxp = hero.x - portal.x;
+  const dyp = hero.y - portal.y;
+  if(dxp*dxp + dyp*dyp < (portal.r + 18*DPR)*(portal.r + 18*DPR)){
+    const allHearts = hearts.every(h=>h.got);
+    if(allHearts){
+      if(stage < TOTAL_STAGES){
+        stage += 1;
+        makeStage(stage);
+      } else {
+        showDialogue([{who:SPEAKER, text: END_NOTE}]);
+        stop();
+        ui.play.textContent = "Play";
+      }
+    }
+  }
+
+  hero.bob += dt * 8;
+}
+
+function loseLife(){
+  if(lives <= 0) return;
+  lives = Math.max(0, lives - 1);
+  hero.invuln = 1.0;
+  syncUI();
+  if(lives === 0){
+    stop();
+    ui.play.textContent = "Play";
+  }
+}
+
+function respawn(){
+  const baseY = H - 90*DPR;
+  hero.x = 110*DPR; hero.y = baseY-160*DPR;
+  hero.vx = 0; hero.vy = 0;
+}
+
+function heroBox(){ return { x: hero.x - hero.w*DPR/2, y: hero.y - hero.h*DPR/2, w: hero.w*DPR, h: hero.h*DPR }; }
+function aabb(a,b){ return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
+
+/* =========================
+   Rendering
+   ========================= */
+function draw(ts){
+  ctx.clearRect(0,0,W,H);
+
+  drawStars(ts, 0.10, 120, 0.16);
+  drawStars(ts, 0.18, 80, 0.12);
+  drawWaveBand(ts, 0.22, false);
+  drawWaveBand(ts, 0.34, true);
+
+  for(const p of platforms){
+    glowRect(p.x,p.y,p.w,p.h, vibeMode ? "rgba(108,99,255,.28)" : "rgba(255,77,141,.22)");
+    ctx.fillStyle = p.moving ? "rgba(56,242,193,.10)" : (vibeMode ? "rgba(255,255,255,.08)" : "rgba(255,255,255,.10)");
+    roundRect(p.x,p.y,p.w,p.h, 10*DPR);
+    ctx.fill();
+    ctx.strokeStyle = p.moving ? "rgba(56,242,193,.22)" : "rgba(255,255,255,.18)";
+    ctx.lineWidth = 1*DPR;
+    ctx.stroke();
+  }
+
+  for(const s of spikes) drawSpike(s.x, s.y, s.w, s.h);
+  for(const e of enemies) drawEnemy(e.x, e.y0 + (e.yHover||0), e.r, ts, e.phase);
+
+  for(const h of hearts){
+    if(h.got) continue;
+    const bob = Math.sin(ts/380 + h.phase) * 6*DPR;
+    drawHeart(h.x, h.y + bob, h.r, vibeMode ? "#38f2c1" : "#ff4d8d");
+  }
+
+  for(const m of mushrooms){
+    if(m.got) continue;
+    const bob = Math.sin(ts/420 + m.phase) * 5*DPR;
+    drawMushroom(m.x, m.y + bob, m.r);
+  }
+
+  drawPortal(ts);
+  drawHero(ts);
+
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  const g = ctx.createRadialGradient(W*0.5,H*0.45, W*0.1, W*0.5,H*0.55, W*0.72);
+  g.addColorStop(0, "rgba(0,0,0,0)");
+  g.addColorStop(1, "rgba(0,0,0,.75)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+  ctx.restore();
+}
+
+function drawStars(ts, speed, count, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  for(let i=0;i<count;i++){
+    const x = ((i*97*DPR) + ts*speed) % W;
+    const y = ((i*53*DPR) + ts*speed*0.6) % H;
+    ctx.beginPath();
+    ctx.arc(x, y, (i%3 ? 1.2:1.8)*DPR, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(255,255,255,.9)";
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawWaveBand(ts, speed, alt=false){
+  const period = 320*DPR;
+  const shift = (ts*speed) % period;
+
+  ctx.save();
+  ctx.globalAlpha = alt ? 0.25 : 0.18;
+
+  const yBase = H - (alt ? 160: 120)*DPR;
+  const amp = (alt ? 22:16)*DPR;
+  const k = (2*Math.PI) / period;
+
+  for(let tile=-1; tile<=1; tile++){
+    const x0 = tile*period + shift;
+
+    ctx.beginPath();
+    ctx.moveTo(x0 - period, H);
+
+    const start = x0 - period;
+    const end = x0 + W + period;
+
+    const step = 60*DPR;
+    for(let x=start; x<=end; x+=step){
+      const y1 = yBase + Math.sin((x - shift)*k)*amp;
+      const x2 = x + step/2;
+      const y2 = yBase + Math.sin((x2 - shift)*k)*amp;
+      if(x === start) ctx.lineTo(x, y1);
+      else ctx.quadraticCurveTo(x2, y2, x+step, y1);
+    }
+
+    ctx.lineTo(end, H);
+    ctx.closePath();
+
+    ctx.fillStyle = alt ? "rgba(108,99,255,.55)" : "rgba(255,77,141,.55)";
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawEnemy(x,y,r,ts,phase){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.shadowColor = "rgba(255,77,141,.55)";
+  ctx.shadowBlur = 22*DPR;
+
+  ctx.beginPath();
+  ctx.arc(0,0,r,0,Math.PI*2);
+  ctx.fillStyle = "rgba(255,77,141,.26)";
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  const pulse = 0.5 + 0.5*Math.sin(ts/220 + phase);
+  ctx.beginPath();
+  ctx.arc(0,0,r + pulse*3*DPR,0,Math.PI*2);
+  ctx.strokeStyle = "rgba(255,255,255,.22)";
+  ctx.lineWidth = 1.5*DPR;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(0,0,r*0.52,0,Math.PI*2);
+  ctx.fillStyle = "rgba(255,255,255,.55)";
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawSpike(x,y,w,h){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.shadowColor = "rgba(255,204,102,.48)";
+  ctx.shadowBlur = 18*DPR;
+
+  ctx.fillStyle = "rgba(255,204,102,.35)";
+  roundRect(w*0.40, -h*0.22, w*0.20, h*0.22, 3*DPR);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(w*0.5, -h);
+  ctx.lineTo(w*0.22, 0);
+  ctx.lineTo(w*0.78, 0);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255,204,102,.92)";
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.moveTo(w*0.5, -h);
+  ctx.lineTo(w*0.34, -h*0.28);
+  ctx.strokeStyle = "rgba(255,255,255,.30)";
+  ctx.lineWidth = 1*DPR;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(w*0.5, -h);
+  ctx.lineTo(w*0.22, 0);
+  ctx.lineTo(w*0.78, 0);
+  ctx.closePath();
+  ctx.strokeStyle = "rgba(0,0,0,.28)";
+  ctx.lineWidth = 1*DPR;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawHero(ts){
+  if(!selectedHero) return;
+
+  const inv = hero.invuln > 0 ? (Math.sin(ts/60)*0.5+0.5) : 1;
+  const bob = Math.sin(hero.bob)*4*DPR;
+
+  ctx.save();
+  ctx.globalAlpha = 0.24 * inv;
+  ctx.shadowColor = selectedHero.glow;
+  ctx.shadowBlur = 26*DPR;
+  ctx.beginPath();
+  ctx.ellipse(hero.x - hero.face*10*DPR, hero.y + bob + 10*DPR, 18*DPR, 8*DPR, 0, 0, Math.PI*2);
+  ctx.fillStyle = selectedHero.glow;
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = inv;
+  ctx.translate(hero.x, hero.y + bob);
+  ctx.shadowColor = selectedHero.glow;
+  ctx.shadowBlur = 24*DPR;
+
+  roundRect(-16*DPR, -20*DPR, 32*DPR, 40*DPR, 14*DPR);
+  ctx.fillStyle = selectedHero.bodyFill;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "rgba(255,255,255,.20)";
+  ctx.lineWidth = 1*DPR;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(-6*DPR, -4*DPR, 2.2*DPR, 0, Math.PI*2);
+  ctx.arc( 6*DPR, -4*DPR, 2.2*DPR, 0, Math.PI*2);
+  ctx.fillStyle = selectedHero.detail;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(0, 4*DPR, 7*DPR, 0.1*Math.PI, 0.9*Math.PI);
+  ctx.strokeStyle = "rgba(233,231,255,.75)";
+  ctx.lineWidth = 1.4*DPR;
+  ctx.stroke();
+
+  const handY = 6*DPR + Math.sin(ts/120)*3*DPR;
+  ctx.save();
+  ctx.shadowColor = selectedHero.glow;
+  ctx.shadowBlur = 18*DPR;
+  ctx.beginPath();
+  ctx.arc(-28*DPR, handY, 7*DPR, 0, Math.PI*2);
+  ctx.arc( 28*DPR, handY, 7*DPR, 0, Math.PI*2);
+  ctx.fillStyle = "rgba(255,255,255,.16)";
+  ctx.fill();
+  ctx.restore();
+
+  if(selectedHero.id === "girl"){
+    ctx.save();
+    ctx.translate(0, -22*DPR);
+    ctx.shadowColor = selectedHero.accent;
+    ctx.shadowBlur = 18*DPR;
+    ctx.beginPath();
+    ctx.ellipse(-7*DPR, 0, 7*DPR, 4*DPR, -0.2, 0, Math.PI*2);
+    ctx.ellipse( 7*DPR, 0, 7*DPR, 4*DPR,  0.2, 0, Math.PI*2);
+    ctx.fillStyle = selectedHero.accent;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(0,0,2.6*DPR,0,Math.PI*2);
+    ctx.fillStyle = "rgba(255,255,255,.65)";
+    ctx.fill();
+    ctx.restore();
+  } else {
+    ctx.save();
+    ctx.translate(0, -6*DPR);
+    ctx.shadowColor = "rgba(0,0,0,.6)";
+    ctx.shadowBlur = 14*DPR;
+
+    ctx.fillStyle = "rgba(0,0,0,.55)";
+    roundRect(-16*DPR, -6*DPR, 14*DPR, 10*DPR, 4*DPR); ctx.fill();
+    roundRect(  2*DPR, -6*DPR, 14*DPR, 10*DPR, 4*DPR); ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(0,0,0,.45)";
+    roundRect(-2*DPR, -2*DPR, 4*DPR, 2.2*DPR, 2*DPR); ctx.fill();
+
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    roundRect(-14*DPR, -5*DPR, 5*DPR, 8*DPR, 3*DPR); ctx.fill();
+    roundRect(  4*DPR, -5*DPR, 5*DPR, 8*DPR, 3*DPR); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function drawMushroom(x,y,r){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.shadowColor = "rgba(56,242,193,.45)";
+  ctx.shadowBlur = 18*DPR;
+
+  ctx.beginPath();
+  ctx.ellipse(0, -r*0.25, r*1.05, r*0.70, 0, Math.PI, Math.PI*2);
+  ctx.fillStyle = "rgba(56,242,193,.55)";
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "rgba(255,255,255,.65)";
+  for(let i=0;i<3;i++){
+    ctx.beginPath();
+    ctx.arc((-0.45+i*0.45)*r, -0.45*r, 0.14*r, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.beginPath();
+  roundRect(-0.35*r, -0.25*r, 0.70*r, 1.05*r, 0.30*r);
+  ctx.fillStyle = "rgba(255,255,255,.18)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.18)";
+  ctx.lineWidth = 1*DPR;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawHeart(x,y,r,clr){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.shadowColor = clr;
+  ctx.shadowBlur = 18*DPR;
+  ctx.beginPath();
+  ctx.moveTo(0, -0.35*r);
+  ctx.bezierCurveTo(0.5*r, -0.9*r, 1.4*r, -0.2*r, 0, 1.1*r);
+  ctx.bezierCurveTo(-1.4*r, -0.2*r, -0.5*r, -0.9*r, 0, -0.35*r);
+  ctx.closePath();
+  ctx.fillStyle = clr;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 0.22;
+  ctx.beginPath();
+  ctx.ellipse(-0.25*r, -0.12*r, 0.35*r, 0.22*r, -0.4, 0, Math.PI*2);
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawPortal(ts){
+  const pulse = (Math.sin(ts/220)*0.5+0.5);
+  const r = portal.r + pulse*6*DPR;
+
+  ctx.save();
+  ctx.translate(portal.x, portal.y);
+  ctx.shadowColor = vibeMode ? "rgba(56,242,193,.55)" : "rgba(255,77,141,.55)";
+  ctx.shadowBlur = 34*DPR;
+
+  ctx.beginPath();
+  ctx.arc(0,0,r,0,Math.PI*2);
+  ctx.strokeStyle = vibeMode ? "rgba(56,242,193,.85)" : "rgba(255,77,141,.85)";
+  ctx.lineWidth = 4*DPR;
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 0.7;
+  for(let i=0;i<14;i++){
+    const a = (ts/600) + i*(Math.PI*2/14);
+    const rr = r*0.55 + Math.sin(ts/300 + i)*3*DPR;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a)*rr, Math.sin(a)*rr, 2.2*DPR, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function glowRect(x,y,w,h,clr){
+  ctx.save();
+  ctx.shadowColor = clr;
+  ctx.shadowBlur = 22*DPR;
+  ctx.fillStyle = "rgba(0,0,0,0)";
+  ctx.fillRect(x,y,w,h);
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){
+  const rr = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+rr,y);
+  ctx.arcTo(x+w,y,x+w,y+h,rr);
+  ctx.arcTo(x+w,y+h,x,y+h,rr);
+  ctx.arcTo(x,y+h,x,y,rr);
+  ctx.arcTo(x,y,x+w,y,rr);
+  ctx.closePath();
+}
+
+/* =========================
+   Reset
+   ========================= */
+function resetRun(){
+  elapsed = 0;
+  score = 0;
+  lives = 3;
+  stage = 1;
+  mushroomCount = 0;
+  makeStage(stage);
+  syncUI();
+}
+
+ui.pickGirl.addEventListener("click", ()=> applyHero("girl"));
+ui.pickBoy.addEventListener("click", ()=> applyHero("boy"));
+ui.overlayClose.addEventListener("click", ()=>{ ui.overlay.style.display = "none"; });
+
+/* =========================
+   Init
+   ========================= */
+makeStage(stage);
+syncUI();
+ui.play.textContent = "Play";
+</script>
+</body>
+</html>
